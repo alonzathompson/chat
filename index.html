@@ -1,0 +1,107 @@
+<html>
+
+	<head>
+
+		<title>Chat with socket.io and node.js</title>
+
+		<style>
+			#chat{
+				height: 500px;
+				
+			}
+
+			#contentWrap{
+				display: none;
+			}
+
+			#chatWrap{
+				float: left;
+				/*background-color: #eee;*/
+				border: 1px #000 solid;
+				padding: 1%;
+			}
+			
+			
+		</style>
+
+	</head>
+
+<body>
+
+	<!--Adds users to the chat -->
+	<div id="nickWrap">
+		<p>Enter a username:</p>
+		<p id="nickError"></p>
+		<form id="setNick">
+			<input size="35" id="nickname"></input>
+			<input type="submit"></input>
+		</form>
+	</div>
+
+	<!-- this is the actuall chat -->
+	<div id="contentWrap">	
+		<div id="chatWrap">
+			<div id="chat"></div>
+				<form id="send-message">
+					<input size="35" id="message"></input>
+					<input type="submit"></input>
+				</form>
+		</div>
+		<div id="users"></div>
+	</div>
+
+	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+	jQuery(function($){
+		var socket = io.connect();
+		var $nickForm = $('#setNick');
+		var $nickError = $('#nickError');
+		var $nickBox = $('#nickname');
+		var $users = ('#users');
+		var $messageForm = $('#send-message');
+		var $messageBox = $('#message');
+		var $chat = $('#chat');
+
+		$nickForm.submit(function(e){
+			e.preventDefault();
+
+			//If the user is valid will display whats in the $nickBox value
+			//if not we respond with a error 
+			socket.emit('new user', $nickBox.val(), function(data){
+				if(data){
+					$('#nickWrap').hide();
+					$('#contentWrap').show();
+				} else {
+					$nickError.html('Thst username is already taken! Try again.');
+				}
+			});
+			//Clears the nickBox value
+			$nickBox.val('');
+		});
+
+		//Loops through the usernames wich is passed as the data object
+		socket.on('usernames', function(data){
+			var html = '';
+
+			for (i = 0; i < data.length; i++){
+				html += data[i] + '<br/>'
+			}
+			$users.html = html;
+		});
+
+		$messageForm.submit(function(e){
+			// e.preventDefault prevents page from refreshing
+				e.preventDefault();
+			//Says send message is the messageBox value
+				socket.emit('send message', $messageBox.val());
+				$messageBox.val('');
+		});
+
+		socket.on('new message', function(data){
+			$chat.append(data + "<br/>");	
+		});
+	});
+	</script>
+</body>
+</html>
